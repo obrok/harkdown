@@ -1,25 +1,16 @@
 module Harkdown.Parser ( Harkdown(..), parser ) where
 
+import Control.Applicative hiding ( many, (<|>) )
 import Text.ParserCombinators.Parsec
-import Control.Monad
 
 data Harkdown = Paragraph String
               | List [String]
               deriving Show
 
-listItem = do
-  string "- "
-  result <- many (noneOf "\n")
-  char '\n'
-  return result
+listItem = string "- " *> many (noneOf "\n") <* char '\n'
 
-list = do
-  result <- many1 listItem
-  return $ List result
+list = List <$> many1 listItem
 
-paragraph = do
-  result <- many (noneOf "\n")
-  char '\n'
-  return $ Paragraph result
+paragraph = Paragraph <$> many (noneOf "\n") <* char '\n'
 
 parser = list <|> paragraph
