@@ -1,8 +1,7 @@
 import Text.ParserCombinators.Parsec
-import Text.Parsec.Prim
-
-flatten :: [String] -> String
-flatten = foldl (++) ""
+import Harkdown.Parser as HP
+import Harkdown.HTMLGeneration as HTML
+import Harkdown.Tools
 
 stripEnd :: String -> String
 stripEnd = reverse . dropWhile (== ' ') . reverse
@@ -26,12 +25,12 @@ expandTabs line = let parts = split '\t' line
 
 preprocess = eachLine expandTabs
 
-harkdown :: String -> Either ParseError String
-harkdown input = Right $ "<p>" ++ (init $ preprocess input) ++ "</p>"
+harkdown :: String -> Either ParseError HP.Harkdown
+harkdown input = parse HP.parser "could not parse" (preprocess input)
 
 main = do
   input <- getContents
   putStrLn $ case harkdown input of
-               Right result -> result
+               Right result -> HTML.generateHTML result
                Left error -> show error
 
