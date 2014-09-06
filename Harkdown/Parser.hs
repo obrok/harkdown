@@ -4,10 +4,11 @@ import Control.Applicative hiding ( many, (<|>) )
 import Text.ParserCombinators.Parsec
 
 data Harkdown = Paragraph String
-              | List [String]
+              | ListItem String
+              | List [Harkdown]
               deriving Show
 
-listItem = string "- " *> many (noneOf "\n") <* char '\n'
+listItem = ListItem <$> (string "- " *> many (noneOf "\n") <* char '\n')
 
 list = List <$> many1 listItem
 
