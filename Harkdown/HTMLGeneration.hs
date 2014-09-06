@@ -6,3 +6,5 @@ import Harkdown.Tools
 generateHTML (Paragraph p) = "<p>" ++ p ++ "</p>"
 generateHTML (List items) = "<ul>\n" ++ (flatten . map generateHTML $ items) ++ "</ul>"
 generateHTML (ListItem content) = "<li>" ++ content ++ "</li>\n"
+generateHTML (HorizontalLine) = "<hr/>\n"
+generateHTML (Sequence items) = flatten . map generateHTML $ items
