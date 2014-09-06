@@ -2,20 +2,25 @@ module Harkdown.Parser ( Harkdown(..), parser ) where
 
 import Control.Applicative hiding ( many, (<|>) )
 import Text.ParserCombinators.Parsec
+import Harkdown.Tools
 
-data Harkdown = Paragraph String
+type ParagraphLine = String
+
+data Harkdown = Paragraph [ParagraphLine]
               | ListItem String
               | List [Harkdown]
               | HorizontalLine
               | Sequence [Harkdown]
               deriving Show
 
-horizontalLine = try (string "***\n" <|> string "---\n" <|> string "___\n") *> return HorizontalLine
+horizontalLine = HorizontalLine <$ try (string "***\n" <|> string "---\n" <|> string "___\n")
 
-listItem = ListItem <$> (string "- " *> many (noneOf "\n") <* char '\n')
+listItem = ListItem <$> (try (string "- ") *> many (noneOf "\n") <* char '\n')
 
 list = List <$> many1 listItem
 
-paragraph = Paragraph <$> many (noneOf "\n") <* char '\n'
+paragraphLine = many (noneOf "\n") <* char '\n'
+
+paragraph = Paragraph <$> many1 paragraphLine
 
 parser = Sequence <$> many (horizontalLine <|> list <|> paragraph)
