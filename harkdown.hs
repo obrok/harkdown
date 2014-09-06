@@ -9,21 +9,25 @@ stripEnd = reverse . dropWhile (== ' ') . reverse
 
 tabStop = 4
 
-rjust character cutoff string =
-  string ++ take (cutoff - (length string) `mod` cutoff) (repeat character)
+rjust width string = let count = width - length string `mod` width
+                     in string ++ (take count $ repeat ' ')
 
-charSeq = do
-  parts <- (many $ noneOf "\n\t") `sepBy` (oneOf "\t")
-  return . stripEnd . flatten . map (rjust ' ' tabStop) $ parts
+eachLine f = unlines . map f . lines
 
-line = do
-  result <- charSeq
-  return $ "<p>" ++ result ++ "</p>"
+split :: Char -> String -> [String]
+split _ [] = []
+split character string = let x = takeWhile (/= character) string
+                             xs = split character . drop 1 . dropWhile (/= character) $ string
+                         in x:xs
 
-harkdownParser = line
+expandTabs line = let parts = split '\t' line
+                      expanded = map (rjust tabStop) parts
+                  in stripEnd . flatten $ expanded
+
+preprocess = eachLine expandTabs
 
 harkdown :: String -> Either ParseError String
-harkdown input = parse harkdownParser "could not parse" input
+harkdown input = Right $ "<p>" ++ (init $ preprocess input) ++ "</p>"
 
 main = do
   input <- getContents
