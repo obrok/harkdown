@@ -65,6 +65,6 @@ paragraph = Paragraph <$> (many1 (notFollowedBy horizontalRule *> whitespace *> 
 
 codeBlock = CodeBlock <$> (try (string "    ") *> many (noneOf "\n") <* string "\n")
 
-atxHeader = ATXHeader <$> try (length <$> atMost 6 (char '#') <* space) <*> inlineContent <* newline
+atxHeader = ATXHeader <$> try (length <$> atMost 6 (char '#') <* space) <*> (whitespace *> inlineContent <* newline)
 
 parser = Sequence <$> many (codeBlock <|> horizontalRule <|> atxHeader <|> setextHeader <|> list <|> paragraph)
