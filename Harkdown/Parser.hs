@@ -1,14 +1,18 @@
-module Harkdown.Parser ( ParagraphContent(..), Harkdown(..), parser ) where
+module Harkdown.Parser ( InlineItem(..), InlineContent(..), Harkdown(..), parser ) where
 
 import Control.Applicative hiding ( many, (<|>), optional )
 import Text.ParserCombinators.Parsec hiding ( space, newline )
 import Harkdown.Tools
 
-data ParagraphContent = Text String
-                      | Emphasis String
-                      deriving Show
+data InlineItem = Text String
+                | Emphasis String
+                deriving Show
 
-data Harkdown = Paragraph [ParagraphContent]
+data InlineContent = InlineContent InlineItem InlineContent
+                   | End
+                   deriving Show
+
+data Harkdown = Paragraph [InlineContent]
               | ListItem String
               | HorizontalLineListItem
               | List [Harkdown]
@@ -16,7 +20,7 @@ data Harkdown = Paragraph [ParagraphContent]
               | Sequence [Harkdown]
               | CodeBlock String
               | Header String
-              | ATXHeader Int String
+              | ATXHeader Int InlineContent
               deriving Show
 
 newline = char '\n'
@@ -47,20 +51,20 @@ listItem = notFollowedBy horizontalRule *> try (horizontalRuleListItem <|> regul
 
 list = List <$> many1 listItem
 
-paragraphText = Text <$> (many1 (noneOf "\n") <* char '\n')
-
-emphasis = Emphasis <$> try (whitespace *> between (string "*") (string "*") (many1 $ noneOf "*"))
-
 setextHeader = Header <$> try (manyTill anyToken newline <* string "---\n")
 
-paragraphContent = notFollowedBy horizontalRule *> optional (char '\\') *> (emphasis <|> paragraphText)
+escapedChar = Text <$> (:[]) <$> (string "\\" *> anyToken)
 
-emptyLine = char '\n'
+paragraphText = Text <$> (:[]) <$> noneOf "\n"
 
-paragraph = Paragraph <$> (many1 paragraphContent <* optional emptyLine)
+emphasis = Emphasis <$> between (string "*") (string "*") (many1 $ noneOf "*")
+
+inlineContent = (InlineContent <$> (try escapedChar <|> try emphasis <|> paragraphText) <*> (try inlineContent <|> pure End))
+
+paragraph = Paragraph <$> (many1 (notFollowedBy horizontalRule *> whitespace *> inlineContent <* newline) <* optional newline)
 
 codeBlock = CodeBlock <$> (try (string "    ") *> many (noneOf "\n") <* string "\n")
 
-atxHeader = ATXHeader <$> try (length <$> atMost 6 (char '#') <* space) <*> manyTill anyToken newline
+atxHeader = ATXHeader <$> try (length <$> atMost 6 (char '#') <* space) <*> inlineContent <* newline
 
 parser = Sequence <$> many (codeBlock <|> horizontalRule <|> atxHeader <|> setextHeader <|> list <|> paragraph)
