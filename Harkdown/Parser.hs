@@ -53,7 +53,7 @@ emphasis = Emphasis <$> try (whitespace *> between (string "*") (string "*") (ma
 
 setextHeader = Header <$> try (manyTill anyToken newline <* string "---\n")
 
-paragraphContent = notFollowedBy horizontalRule *> (emphasis <|> paragraphText)
+paragraphContent = notFollowedBy horizontalRule *> optional (char '\\') *> (emphasis <|> paragraphText)
 
 emptyLine = char '\n'
 
