@@ -1,6 +1,6 @@
 module Harkdown.Parser ( Harkdown(..), parser ) where
 
-import Control.Applicative hiding ( many, (<|>) )
+import Control.Applicative hiding ( many, (<|>), optional )
 import Text.ParserCombinators.Parsec
 import Harkdown.Tools
 
@@ -14,18 +14,27 @@ data Harkdown = Paragraph [ParagraphLine]
               | CodeBlock String
               deriving Show
 
-horizontalLine = HorizontalLine <$
-  try (many (char ' ')
-  *> (string "***" <|> string "---" <|> string "___")
-  *> manyTill anyToken (char '\n'))
+whitespace = many (char ' ')
+
+horizontalLineChar = string "*" <|> string "-" <|> string "_"
+
+untill c = manyTill anyToken (char c)
+
+horizontalLine = HorizontalLine <$ try (
+  whitespace *> horizontalLineChar *>
+  whitespace *> horizontalLineChar *>
+  whitespace *> horizontalLineChar *>
+  many (whitespace *> horizontalLineChar) *> char '\n')
 
 listItem = ListItem <$> (try (string "- ") *> many (noneOf "\n") <* char '\n')
 
 list = List <$> many1 listItem
 
-paragraphLine = many (noneOf "\n") <* char '\n'
+paragraphLine = many1 (noneOf "\n") <* char '\n'
 
-paragraph = Paragraph <$> many1 paragraphLine
+emptyLine = char '\n'
+
+paragraph = Paragraph <$> (many1 paragraphLine <* optional emptyLine)
 
 codeBlock = CodeBlock <$> (try (string "    ") *> many (noneOf "\n") <* string "\n")
 
