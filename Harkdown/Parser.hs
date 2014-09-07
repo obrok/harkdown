@@ -16,6 +16,7 @@ data Harkdown = Paragraph [ParagraphContent]
               | Sequence [Harkdown]
               | CodeBlock String
               | Header String
+              | ATXHeader Int String
               deriving Show
 
 newline = char '\n'
@@ -55,4 +56,6 @@ paragraph = Paragraph <$> (many1 paragraphContent <* optional emptyLine)
 
 codeBlock = CodeBlock <$> (try (string "    ") *> many (noneOf "\n") <* string "\n")
 
-parser = Sequence <$> many (codeBlock <|> horizontalRule <|> setextHeader <|> list <|> paragraph)
+atxHeader = ATXHeader <$> try (length <$> many1 (char '#') <* space) <*> manyTill anyToken newline
+
+parser = Sequence <$> many (codeBlock <|> horizontalRule <|> atxHeader <|> setextHeader <|> list <|> paragraph)
