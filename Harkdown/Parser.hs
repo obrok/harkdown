@@ -22,8 +22,6 @@ space = char ' '
 
 whitespace = many space
 
-untill c = manyTill anyToken (char c)
-
 horizontalRuleOf ruleMarker = HorizontalLine <$ try (
   optional space *> optional space *> optional space *> string ruleMarker *>
   whitespace *> string ruleMarker *>
@@ -32,7 +30,7 @@ horizontalRuleOf ruleMarker = HorizontalLine <$ try (
 
 horizontalRule = horizontalRuleOf "*" <|> horizontalRuleOf "_" <|> horizontalRuleOf "-"
 
-listItem = ListItem <$> (try (string "- ") *> many (noneOf "\n") <* char '\n')
+listItem = ListItem <$> try ((notFollowedBy horizontalRule) *> (string "* " <|> string "- ") *> many (noneOf "\n") <* char '\n')
 
 list = List <$> many1 listItem
 
