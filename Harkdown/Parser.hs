@@ -10,6 +10,7 @@ data ParagraphContent = Text String
 
 data Harkdown = Paragraph [ParagraphContent]
               | ListItem String
+              | HorizontalLineListItem
               | List [Harkdown]
               | HorizontalLine
               | Sequence [Harkdown]
@@ -26,11 +27,17 @@ horizontalRuleOf ruleMarker = HorizontalLine <$ try (
   optional space *> optional space *> optional space *> string ruleMarker *>
   whitespace *> string ruleMarker *>
   whitespace *> string ruleMarker *>
-  many (whitespace *> string ruleMarker) *> char '\n')
+  many (whitespace *> string ruleMarker) *> optional newline)
 
 horizontalRule = horizontalRuleOf "*" <|> horizontalRuleOf "_" <|> horizontalRuleOf "-"
 
-listItem = ListItem <$> try ((notFollowedBy horizontalRule) *> (string "* " <|> string "- ") *> many (noneOf "\n") <* char '\n')
+listItemBullet = string "* " <|> string "- "
+
+horizontalRuleListItem = HorizontalLineListItem <$ try (listItemBullet *> horizontalRule)
+
+regularListItem = ListItem <$> (listItemBullet *> many (noneOf "\n") <* newline)
+
+listItem = notFollowedBy horizontalRule *> try (horizontalRuleListItem <|> regularListItem)
 
 list = List <$> many1 listItem
 
