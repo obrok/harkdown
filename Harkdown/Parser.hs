@@ -1,12 +1,14 @@
-module Harkdown.Parser ( Harkdown(..), parser ) where
+module Harkdown.Parser ( ParagraphContent(..), Harkdown(..), parser ) where
 
 import Control.Applicative hiding ( many, (<|>), optional )
 import Text.ParserCombinators.Parsec
 import Harkdown.Tools
 
-type ParagraphLine = String
+data ParagraphContent = Text String
+                      | Emphasis String
+                      deriving Show
 
-data Harkdown = Paragraph [ParagraphLine]
+data Harkdown = Paragraph [ParagraphContent]
               | ListItem String
               | List [Harkdown]
               | HorizontalLine
@@ -16,26 +18,30 @@ data Harkdown = Paragraph [ParagraphLine]
 
 whitespace = many (char ' ')
 
-horizontalLineChar = string "*" <|> string "-" <|> string "_"
-
 untill c = manyTill anyToken (char c)
 
-horizontalLine = HorizontalLine <$ try (
-  whitespace *> horizontalLineChar *>
-  whitespace *> horizontalLineChar *>
-  whitespace *> horizontalLineChar *>
-  many (whitespace *> horizontalLineChar) *> char '\n')
+concreteHorizontalRule ruleMarker = HorizontalLine <$ try (
+  whitespace *> string ruleMarker *>
+  whitespace *> string ruleMarker *>
+  whitespace *> string ruleMarker *>
+  many (whitespace *> string ruleMarker) *> char '\n')
+
+horizontalRule = concreteHorizontalRule "*" <|> concreteHorizontalRule "_" <|> concreteHorizontalRule "-"
 
 listItem = ListItem <$> (try (string "- ") *> many (noneOf "\n") <* char '\n')
 
 list = List <$> many1 listItem
 
-paragraphLine = many1 (noneOf "\n") <* char '\n'
+paragraphText = Text <$> (many1 (noneOf "\n") <* char '\n')
+
+emphasis = Emphasis <$> try (whitespace *> between (string "*") (string "*") (many1 $ noneOf "*"))
+
+paragraphContent = emphasis <|> paragraphText
 
 emptyLine = char '\n'
 
-paragraph = Paragraph <$> (many1 paragraphLine <* optional emptyLine)
+paragraph = Paragraph <$> (many1 paragraphContent <* optional emptyLine)
 
 codeBlock = CodeBlock <$> (try (string "    ") *> many (noneOf "\n") <* string "\n")
 
-parser = Sequence <$> many (codeBlock <|> horizontalLine <|> list <|> paragraph)
+parser = Sequence <$> many (codeBlock <|> horizontalRule <|> list <|> paragraph)
