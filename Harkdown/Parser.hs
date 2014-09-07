@@ -1,7 +1,7 @@
 module Harkdown.Parser ( ParagraphContent(..), Harkdown(..), parser ) where
 
 import Control.Applicative hiding ( many, (<|>), optional )
-import Text.ParserCombinators.Parsec
+import Text.ParserCombinators.Parsec hiding ( space )
 import Harkdown.Tools
 
 data ParagraphContent = Text String
@@ -16,12 +16,14 @@ data Harkdown = Paragraph [ParagraphContent]
               | CodeBlock String
               deriving Show
 
-whitespace = many (char ' ')
+space = char ' '
+
+whitespace = many space
 
 untill c = manyTill anyToken (char c)
 
 horizontalRuleOf ruleMarker = HorizontalLine <$ try (
-  whitespace *> string ruleMarker *>
+  optional space *> optional space *> optional space *> string ruleMarker *>
   whitespace *> string ruleMarker *>
   whitespace *> string ruleMarker *>
   many (whitespace *> string ruleMarker) *> char '\n')
@@ -36,7 +38,7 @@ paragraphText = Text <$> (many1 (noneOf "\n") <* char '\n')
 
 emphasis = Emphasis <$> try (whitespace *> between (string "*") (string "*") (many1 $ noneOf "*"))
 
-paragraphContent = emphasis <|> paragraphText
+paragraphContent = notFollowedBy horizontalRule *> (emphasis <|> paragraphText)
 
 emptyLine = char '\n'
 
