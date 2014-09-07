@@ -9,3 +9,4 @@ generateHTML (List items) = "<ul>\n" ++ (flatten . map generateHTML $ items) ++ 
 generateHTML (ListItem content) = "<li>" ++ content ++ "</li>\n"
 generateHTML (HorizontalLine) = "<hr/>\n"
 generateHTML (Sequence items) = flatten . map generateHTML $ items
+generateHTML (CodeBlock content) = "<pre><code>" ++ content ++ "\n</code></pre>"

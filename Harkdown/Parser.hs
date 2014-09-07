@@ -11,6 +11,7 @@ data Harkdown = Paragraph [ParagraphLine]
               | List [Harkdown]
               | HorizontalLine
               | Sequence [Harkdown]
+              | CodeBlock String
               deriving Show
 
 horizontalLine = HorizontalLine <$ try (many (char ' ') *> (string "***\n" <|> string "---\n" <|> string "___\n"))
@@ -23,4 +24,6 @@ paragraphLine = many (noneOf "\n") <* char '\n'
 
 paragraph = Paragraph <$> many1 paragraphLine
 
-parser = Sequence <$> many (horizontalLine <|> list <|> paragraph)
+codeBlock = CodeBlock <$> (try (string "    ") *> many (noneOf "\n") <* string "\n")
+
+parser = Sequence <$> many (codeBlock <|> horizontalLine <|> list <|> paragraph)
