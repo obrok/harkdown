@@ -20,7 +20,12 @@ data Harkdown = Paragraph [ParagraphContent]
               deriving Show
 
 newline = char '\n'
+
 space = char ' '
+
+atMost :: Show a => Int -> Parser a -> Parser [a]
+atMost 0 p = const [] <$> notFollowedBy p
+atMost n p = (:) <$> p <*> (atMost 0 p <|> atMost (n - 1) p)
 
 whitespace = many space
 
@@ -56,6 +61,6 @@ paragraph = Paragraph <$> (many1 paragraphContent <* optional emptyLine)
 
 codeBlock = CodeBlock <$> (try (string "    ") *> many (noneOf "\n") <* string "\n")
 
-atxHeader = ATXHeader <$> try (length <$> many1 (char '#') <* space) <*> manyTill anyToken newline
+atxHeader = ATXHeader <$> try (length <$> atMost 6 (char '#') <* space) <*> manyTill anyToken newline
 
 parser = Sequence <$> many (codeBlock <|> horizontalRule <|> atxHeader <|> setextHeader <|> list <|> paragraph)
