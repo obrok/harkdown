@@ -13,3 +13,4 @@ generateHTML (ListItem content) = "<li>" ++ content ++ "</li>\n"
 generateHTML (HorizontalLine) = "<hr/>"
 generateHTML (Sequence items) = flatten . intersperse "\n" . map generateHTML $ items
 generateHTML (CodeBlock content) = "<pre><code>" ++ content ++ "\n</code></pre>"
+generateHTML (Header text) = "<h2>" ++ text ++ "</h2>\n"

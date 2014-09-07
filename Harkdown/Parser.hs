@@ -1,7 +1,7 @@
 module Harkdown.Parser ( ParagraphContent(..), Harkdown(..), parser ) where
 
 import Control.Applicative hiding ( many, (<|>), optional )
-import Text.ParserCombinators.Parsec hiding ( space )
+import Text.ParserCombinators.Parsec hiding ( space, newline )
 import Harkdown.Tools
 
 data ParagraphContent = Text String
@@ -14,8 +14,10 @@ data Harkdown = Paragraph [ParagraphContent]
               | HorizontalLine
               | Sequence [Harkdown]
               | CodeBlock String
+              | Header String
               deriving Show
 
+newline = char '\n'
 space = char ' '
 
 whitespace = many space
@@ -38,6 +40,8 @@ paragraphText = Text <$> (many1 (noneOf "\n") <* char '\n')
 
 emphasis = Emphasis <$> try (whitespace *> between (string "*") (string "*") (many1 $ noneOf "*"))
 
+setextHeader = Header <$> try (manyTill anyToken newline <* string "---\n")
+
 paragraphContent = notFollowedBy horizontalRule *> (emphasis <|> paragraphText)
 
 emptyLine = char '\n'
@@ -46,4 +50,4 @@ paragraph = Paragraph <$> (many1 paragraphContent <* optional emptyLine)
 
 codeBlock = CodeBlock <$> (try (string "    ") *> many (noneOf "\n") <* string "\n")
 
-parser = Sequence <$> many (codeBlock <|> horizontalRule <|> list <|> paragraph)
+parser = Sequence <$> many (codeBlock <|> horizontalRule <|> setextHeader <|> list <|> paragraph)
