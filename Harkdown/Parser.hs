@@ -14,7 +14,10 @@ data Harkdown = Paragraph [ParagraphLine]
               | CodeBlock String
               deriving Show
 
-horizontalLine = HorizontalLine <$ try (many (char ' ') *> (string "***\n" <|> string "---\n" <|> string "___\n"))
+horizontalLine = HorizontalLine <$
+  try (many (char ' ')
+  *> (string "***" <|> string "---" <|> string "___")
+  *> manyTill anyToken (char '\n'))
 
 listItem = ListItem <$> (try (string "- ") *> many (noneOf "\n") <* char '\n')
 
