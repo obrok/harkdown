@@ -20,13 +20,13 @@ whitespace = many (char ' ')
 
 untill c = manyTill anyToken (char c)
 
-concreteHorizontalRule ruleMarker = HorizontalLine <$ try (
+horizontalRuleOf ruleMarker = HorizontalLine <$ try (
   whitespace *> string ruleMarker *>
   whitespace *> string ruleMarker *>
   whitespace *> string ruleMarker *>
   many (whitespace *> string ruleMarker) *> char '\n')
 
-horizontalRule = concreteHorizontalRule "*" <|> concreteHorizontalRule "_" <|> concreteHorizontalRule "-"
+horizontalRule = horizontalRuleOf "*" <|> horizontalRuleOf "_" <|> horizontalRuleOf "-"
 
 listItem = ListItem <$> (try (string "- ") *> many (noneOf "\n") <* char '\n')
 
