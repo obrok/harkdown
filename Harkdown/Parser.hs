@@ -13,7 +13,7 @@ data Harkdown = Paragraph [ParagraphLine]
               | Sequence [Harkdown]
               deriving Show
 
-horizontalLine = HorizontalLine <$ try (string "***\n" <|> string "---\n" <|> string "___\n")
+horizontalLine = HorizontalLine <$ try (many (char ' ') *> (string "***\n" <|> string "---\n" <|> string "___\n"))
 
 listItem = ListItem <$> (try (string "- ") *> many (noneOf "\n") <* char '\n')
 
