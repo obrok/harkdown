@@ -95,8 +95,10 @@ atxHeader = Header <$> try (atxHeaderLead <* space) <*> (whitespace *> headerCon
 
 setextHeader = (try setextHeader1 <|> try setextHeader2) <* optional newline
 
-setextHeader1 = Header 1 <$> (smallIndent *> headerContent <* newline <* smallIndent <* many1 equals <* newline)
+setextHeaderBody = smallIndent *> headerContent <* newline <* smallIndent
 
-setextHeader2 = Header 2 <$> (smallIndent *> headerContent <* newline <* smallIndent <* many1 minus <* newline)
+setextHeader1 = Header 1 <$> setextHeaderBody <* many1 equals <* newline
+
+setextHeader2 = Header 2 <$> setextHeaderBody <* many1 minus <* newline
 
 parser = Sequence <$> many (codeBlock <|> horizontalRule <|> emptyAtxHeader <|> atxHeader <|> setextHeader <|> list <|> paragraph)
