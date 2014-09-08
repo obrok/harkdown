@@ -73,7 +73,10 @@ trailingBackslash = Text <$> (backslash *> lookAhead newline *> pure "\\")
 
 emphasis = Emphasis <$> between (string "*") (string "*") (many1 $ noneOf "*")
 
-inlineContentItem = try trailingBackslash <|> try escapedChar <|> try emphasis <|> paragraphText
+inlineContentItem = try trailingBackslash <|>
+                    try escapedChar <|>
+                    try emphasis <|>
+                    paragraphText
 
 inlineContent = (InlineContent <$>  inlineContentItem <*> (try inlineContent <|> pure End))
 

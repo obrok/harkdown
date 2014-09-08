@@ -16,5 +16,5 @@ cabal-version:       >=1.8
 
 executable harkdown
   main-is:          Harkdown.hs
-  ghc-options:      -XNoMonomorphismRestriction
-  build-depends:    base ==4.6.*, parsec ==3.1.*
+  extensions:       NoMonomorphismRestriction
+  build-depends:    base ==4.6.*, parsec ==3.1.*, MissingH ==1.2.*

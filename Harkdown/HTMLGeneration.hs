@@ -3,10 +3,15 @@ module Harkdown.HTMLGeneration ( generateHTML ) where
 import Harkdown.Parser
 import Harkdown.Tools
 import Data.List
+import Data.List.Utils
 
 joinLines = init . unlines
 
-paragraphHTML (Text text) = text
+escapeHTML = replace "<" "&lt;" .
+             replace ">" "&gt;" .
+             replace "\"" "&quot;"
+
+paragraphHTML (Text text) = escapeHTML text
 paragraphHTML (Emphasis text) = "<em>" ++ text ++ "</em>"
 
 inlineHTML (End) = ""
