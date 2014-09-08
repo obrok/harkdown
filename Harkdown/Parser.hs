@@ -1,6 +1,7 @@
 module Harkdown.Parser ( InlineItem(..), InlineContent(..), Harkdown(..), parser ) where
 
 import Control.Applicative hiding ( many, (<|>), optional )
+import Control.Monad
 import Text.ParserCombinators.Parsec hiding ( space, newline )
 import Harkdown.Tools
 
@@ -42,6 +43,10 @@ backslash = char '\\'
 
 gt = char '>'
 
+tilde = char '~'
+
+backtick = char '`'
+
 atMost1 :: Show a => Int -> Parser a -> Parser [a]
 atMost1 0 p = const [] <$> notFollowedBy p
 atMost1 n p = (:) <$> p <*> (atMost1 0 p <|> atMost1 (n - 1) p)
@@ -50,6 +55,10 @@ atMost :: Show a => Int -> Parser a -> Parser [a]
 atMost 0 p = const [] <$> notFollowedBy p
 atMost n p = (const [] <$> notFollowedBy p) <|>
              (:) <$> p <*> (atMost 0 p <|> atMost (n - 1) p)
+
+atLeast :: Show a => Int -> Parser a -> Parser [a]
+atLeast 0 p = many p
+atLeast n p = (:) <$> try p <*> atLeast (n - 1) p
 
 smallIndent = atMost 3 space
 
@@ -106,8 +115,15 @@ codeBlockLine = (try (string "    ") *> many (noneOf "\n") <* newline) <|>
 
 codeBlock = CodeBlock <$> init <$> unlines <$> dropBlanks <$> many1 codeBlockLine
 
-fencedCodeBlock = (CodeBlock <$> (try (string "```") *> newline *> manyTill anyToken (try (string "\n```")))) <|>
-                  (CodeBlock <$> (try (string "~~~") *> newline *> manyTill anyToken (try (string "\n~~~"))))
+fencedBlockOpening = try (atLeast 3 backtick <* newline) <|>
+                     try (atLeast 3 tilde <* newline)
+
+fencedBlockClosing opening = newline *> string opening *> many (char (head opening))
+
+fencedCodeBlock = do
+  opening <- fencedBlockOpening
+  result <- manyTill anyToken (try $ fencedBlockClosing opening)
+  return $ CodeBlock result
 
 atxHeaderLead = length <$> (smallIndent *> atMost1 6 hash)
 
