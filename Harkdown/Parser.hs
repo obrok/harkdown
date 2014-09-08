@@ -32,6 +32,8 @@ minus = char '-'
 
 equals = char '='
 
+backslash = char '\\'
+
 atMost1 :: Show a => Int -> Parser a -> Parser [a]
 atMost1 0 p = const [] <$> notFollowedBy p
 atMost1 n p = (:) <$> p <*> (atMost1 0 p <|> atMost1 (n - 1) p)
@@ -63,16 +65,20 @@ listItem = notFollowedBy horizontalRule *> try (horizontalRuleListItem <|> regul
 
 list = List <$> many1 listItem
 
-escapedChar = Text <$> (:[]) <$> (string "\\" *> anyToken)
+escapedChar = Text <$> (:[]) <$> (backslash *> anyToken)
 
 paragraphText = Text <$> (:[]) <$> noneOf "\n"
 
+trailingBackslash = Text <$> (backslash *> lookAhead newline *> pure "\\")
+
 emphasis = Emphasis <$> between (string "*") (string "*") (many1 $ noneOf "*")
 
-inlineContent = (InlineContent <$> (try escapedChar <|> try emphasis <|> paragraphText) <*> (try inlineContent <|> pure End))
+inlineContentItem = try trailingBackslash <|> try escapedChar <|> try emphasis <|> paragraphText
+
+inlineContent = (InlineContent <$>  inlineContentItem <*> (try inlineContent <|> pure End))
 
 headerContent = (End <$ try (whitespace *> many1 hash *> whitespace *> lookAhead newline)) <|>
-                (InlineContent <$> (try escapedChar <|> try emphasis <|> paragraphText) <*> (try headerContent <|> pure End))
+                (InlineContent <$> inlineContentItem <*> (try headerContent <|> pure End))
 
 paragraphItem = notFollowedBy horizontalRule *>
                 notFollowedBy atxHeader *>
