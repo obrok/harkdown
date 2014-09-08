@@ -71,7 +71,13 @@ inlineContent = (InlineContent <$> (try escapedChar <|> try emphasis <|> paragra
 headerContent = (End <$ try (whitespace *> many1 hash *> whitespace *> lookAhead newline)) <|>
                 (InlineContent <$> (try escapedChar <|> try emphasis <|> paragraphText) <*> (try headerContent <|> pure End))
 
-paragraph = Paragraph <$> (many1 (notFollowedBy horizontalRule *> whitespace *> inlineContent <* newline) <* optional newline)
+paragraphItem = notFollowedBy horizontalRule *>
+                notFollowedBy atxHeader *>
+                whitespace *>
+                inlineContent <*
+                newline
+
+paragraph = Paragraph <$> (many1 paragraphItem <* optional newline)
 
 codeBlock = CodeBlock <$> (try (string "    ") *> many (noneOf "\n") <* string "\n")
 
