@@ -52,10 +52,10 @@ smallIndent = atMost 3 space
 whitespace = many space
 
 horizontalRuleOf ruleMarker = HorizontalLine <$ try (
-  optional space *> optional space *> optional space *> string ruleMarker *>
+  smallIndent *> string ruleMarker *>
   whitespace *> string ruleMarker *>
   whitespace *> string ruleMarker *>
-  many (whitespace *> string ruleMarker) *> optional newline)
+  many (whitespace *> string ruleMarker *> whitespace) *> newline)
 
 horizontalRule = horizontalRuleOf "*" <|> horizontalRuleOf "_" <|> horizontalRuleOf "-"
 
@@ -84,8 +84,10 @@ inlineContentItem = try trailingBackslash <|>
 
 inlineContent = (InlineContent <$>  inlineContentItem <*> (try inlineContent <|> pure End))
 
-headerContent = (End <$ try (whitespace *> many1 hash *> whitespace *> lookAhead newline)) <|>
-                (InlineContent <$> inlineContentItem <*> (try headerContent <|> pure End))
+headerContentRest = (End <$ try (whitespace *> many hash *> whitespace *> lookAhead newline)) <|>
+                    (InlineContent <$> inlineContentItem <*> (try headerContentRest <|> pure End))
+
+headerContent = (InlineContent <$> inlineContentItem <*> (try headerContentRest <|> pure End))
 
 paragraphItem = notFollowedBy horizontalRule *>
                 notFollowedBy atxHeader *>
@@ -102,7 +104,7 @@ codeBlock = CodeBlock <$> init <$> unlines <$> many1 codeBlockLine
 
 atxHeaderLead = length <$> (smallIndent *> atMost1 6 hash)
 
-emptyAtxHeader = Header <$> try (atxHeaderLead <* whitespace <* newline) <*> pure End
+emptyAtxHeader = Header <$> try (atxHeaderLead <* whitespace <* many hash <* newline) <*> pure End
 
 atxHeader = Header <$> try (atxHeaderLead <* space) <*> (whitespace *> headerContent <* newline)
 
@@ -110,9 +112,9 @@ setextHeader = (try setextHeader1 <|> try setextHeader2) <* optional newline
 
 setextHeaderBody = smallIndent *> headerContent <* newline <* smallIndent
 
-setextHeader1 = Header 1 <$> setextHeaderBody <* many1 equals <* newline
+setextHeader1 = Header 1 <$> setextHeaderBody <* many1 equals <* whitespace <* newline
 
-setextHeader2 = Header 2 <$> setextHeaderBody <* many1 minus <* newline
+setextHeader2 = Header 2 <$> setextHeaderBody <* many1 minus <* whitespace <* newline
 
 blockquote = Blockquote <$> (gt *> space *> paragraph)
 
