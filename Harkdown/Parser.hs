@@ -24,6 +24,10 @@ data Harkdown = Paragraph [InlineContent]
               | EmptyHarkdown
               deriving Show
 
+isBlank = all (== ' ')
+
+dropBlanks = dropWhile isBlank . reverse . dropWhile isBlank . reverse
+
 newline = char '\n'
 
 space = char ' '
@@ -100,7 +104,7 @@ paragraph = Paragraph <$> (many1 paragraphItem <* optional newline)
 codeBlockLine = (try (string "    ") *> many (noneOf "\n") <* newline) <|>
                 try (whitespace *> newline *> lookAhead codeBlockLine *> pure "")
 
-codeBlock = CodeBlock <$> init <$> unlines <$> many1 codeBlockLine
+codeBlock = CodeBlock <$> init <$> unlines <$> dropBlanks <$> many1 codeBlockLine
 
 atxHeaderLead = length <$> (smallIndent *> atMost1 6 hash)
 
