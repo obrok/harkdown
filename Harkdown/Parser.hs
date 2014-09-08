@@ -82,7 +82,10 @@ paragraphItem = notFollowedBy horizontalRule *>
 
 paragraph = Paragraph <$> (many1 paragraphItem <* optional newline)
 
-codeBlock = CodeBlock <$> (try (string "    ") *> many (noneOf "\n") <* string "\n")
+codeBlockLine = (try (string "    ") *> many (noneOf "\n") <* newline) <|>
+                try (whitespace *> newline *> lookAhead codeBlockLine *> pure "")
+
+codeBlock = CodeBlock <$> init <$> unlines <$> many1 codeBlockLine
 
 atxHeaderLead = length <$> (smallIndent *> atMost1 6 hash)
 
