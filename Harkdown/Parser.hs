@@ -113,12 +113,13 @@ paragraph = Paragraph <$> (many1 paragraphItem <* optional newline)
 codeBlockLine = (try (string "    ") *> many (noneOf "\n") <* newline) <|>
                 try (whitespace *> newline *> lookAhead codeBlockLine *> pure "")
 
-codeBlock = CodeBlock <$> init <$> unlines <$> dropBlanks <$> many1 codeBlockLine
+codeBlock = CodeBlock <$> unlines <$> dropBlanks <$> many1 codeBlockLine
 
 fencedBlockOpening = try (atLeast 3 backtick <* newline) <|>
                      try (atLeast 3 tilde <* newline)
 
-fencedBlockClosing opening = newline *> string opening *> many (char (head opening))
+fencedBlockClosing opening = (string opening *> many (char $ head opening)) <|>
+                             (eof *> pure "")
 
 fencedCodeBlock = do
   opening <- fencedBlockOpening
