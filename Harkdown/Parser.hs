@@ -124,6 +124,7 @@ fencedBlockClosing opening = (string opening *> many (char $ head opening)) <|>
 fencedCodeBlock = do
   opening <- fencedBlockOpening
   result <- manyTill anyToken (try $ fencedBlockClosing opening)
+  optional newline
   return $ CodeBlock result
 
 atxHeaderLead = length <$> (smallIndent *> atMost1 6 hash)
