@@ -81,6 +81,10 @@ paragraph = Paragraph <$> (many1 paragraphItem <* optional newline)
 
 codeBlock = CodeBlock <$> (try (string "    ") *> many (noneOf "\n") <* string "\n")
 
-atxHeader = ATXHeader <$> try (length <$> (atMost 3 space *> atMost1 6 hash <* space)) <*> (whitespace *> headerContent <* newline)
+atxHeaderLead = length <$> (atMost 3 space *> atMost 6 hash)
 
-parser = Sequence <$> many (codeBlock <|> horizontalRule <|> atxHeader <|> setextHeader <|> list <|> paragraph)
+emptyAtxHeader = ATXHeader <$> try (atxHeaderLead <* whitespace <* newline) <*> pure End
+
+atxHeader = ATXHeader <$> try (atxHeaderLead <* space) <*> (whitespace *> headerContent <* newline)
+
+parser = Sequence <$> many (codeBlock <|> horizontalRule <|> emptyAtxHeader <|> atxHeader <|> setextHeader <|> list <|> paragraph)
