@@ -41,6 +41,8 @@ atMost 0 p = const [] <$> notFollowedBy p
 atMost n p = (const [] <$> notFollowedBy p) <|>
              (:) <$> p <*> (atMost 0 p <|> atMost (n - 1) p)
 
+smallIndent = atMost 3 space
+
 whitespace = many space
 
 horizontalRuleOf ruleMarker = HorizontalLine <$ try (
@@ -82,7 +84,7 @@ paragraph = Paragraph <$> (many1 paragraphItem <* optional newline)
 
 codeBlock = CodeBlock <$> (try (string "    ") *> many (noneOf "\n") <* string "\n")
 
-atxHeaderLead = length <$> (atMost 3 space *> atMost 6 hash)
+atxHeaderLead = length <$> (smallIndent *> atMost1 6 hash)
 
 emptyAtxHeader = Header <$> try (atxHeaderLead <* whitespace <* newline) <*> pure End
 
@@ -90,8 +92,8 @@ atxHeader = Header <$> try (atxHeaderLead <* space) <*> (whitespace *> headerCon
 
 setextHeader = (try setextHeader1 <|> try setextHeader2) <* optional newline
 
-setextHeader1 = Header 1 <$> headerContent <* newline <* many1 equals <* newline
+setextHeader1 = Header 1 <$> (smallIndent *> headerContent <* newline <* smallIndent <* many1 equals <* newline)
 
-setextHeader2 = Header 2 <$> headerContent <* newline <* many1 minus <* newline
+setextHeader2 = Header 2 <$> (smallIndent *> headerContent <* newline <* smallIndent <* many1 minus <* newline)
 
 parser = Sequence <$> many (codeBlock <|> horizontalRule <|> emptyAtxHeader <|> atxHeader <|> setextHeader <|> list <|> paragraph)
