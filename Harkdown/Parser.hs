@@ -106,6 +106,9 @@ codeBlockLine = (try (string "    ") *> many (noneOf "\n") <* newline) <|>
 
 codeBlock = CodeBlock <$> init <$> unlines <$> dropBlanks <$> many1 codeBlockLine
 
+fencedCodeBlock = (CodeBlock <$> (try (string "```") *> newline *> manyTill anyToken (try (string "\n```")))) <|>
+                  (CodeBlock <$> (try (string "~~~") *> newline *> manyTill anyToken (try (string "\n~~~"))))
+
 atxHeaderLead = length <$> (smallIndent *> atMost1 6 hash)
 
 emptyAtxHeader = Header <$> try (atxHeaderLead <* whitespace <* many hash <* newline) <*> pure End
@@ -124,4 +127,14 @@ blockquote = Blockquote <$> (gt *> space *> paragraph)
 
 emptyLine = whitespace *> newline *> pure EmptyHarkdown
 
-parser = Sequence <$> many (codeBlock <|> blockquote <|> horizontalRule <|> emptyAtxHeader <|> atxHeader <|> setextHeader <|> list <|> paragraph <|> emptyLine)
+parser = Sequence <$> many (
+  codeBlock <|>
+  fencedCodeBlock <|>
+  blockquote <|>
+  horizontalRule <|>
+  emptyAtxHeader <|>
+  atxHeader <|>
+  setextHeader <|>
+  list <|>
+  paragraph <|>
+  emptyLine)
