@@ -66,10 +66,13 @@ emphasis = Emphasis <$> between (string "*") (string "*") (many1 $ noneOf "*")
 
 inlineContent = (InlineContent <$> (try escapedChar <|> try emphasis <|> paragraphText) <*> (try inlineContent <|> pure End))
 
+headerContent = (End <$ try (whitespace *> many1 (char '#') *> whitespace)) <|>
+                (InlineContent <$> (try escapedChar <|> try emphasis <|> paragraphText) <*> (try headerContent <|> pure End))
+
 paragraph = Paragraph <$> (many1 (notFollowedBy horizontalRule *> whitespace *> inlineContent <* newline) <* optional newline)
 
 codeBlock = CodeBlock <$> (try (string "    ") *> many (noneOf "\n") <* string "\n")
 
-atxHeader = ATXHeader <$> try (length <$> (atMost 3 space *> atMost1 6 (char '#') <* space)) <*> (whitespace *> inlineContent <* newline)
+atxHeader = ATXHeader <$> try (length <$> (atMost 3 space *> atMost1 6 (char '#') <* space)) <*> (whitespace *> headerContent <* newline)
 
 parser = Sequence <$> many (codeBlock <|> horizontalRule <|> atxHeader <|> setextHeader <|> list <|> paragraph)
