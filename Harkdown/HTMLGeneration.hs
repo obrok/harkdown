@@ -25,3 +25,4 @@ generateHTML (HorizontalLine) = "<hr/>"
 generateHTML (Sequence items) = flatten . intersperse "\n" . map generateHTML $ items
 generateHTML (CodeBlock content) = "<pre><code>" ++ content ++ "\n</code></pre>"
 generateHTML (Header n content) = "<h" ++ show n ++ ">" ++ inlineHTML content ++ "</h" ++ show n ++ ">"
+generateHTML (Blockquote content) = "<blockquote>\n" ++ generateHTML content ++ "\n</blockquote>"

@@ -20,6 +20,7 @@ data Harkdown = Paragraph [InlineContent]
               | Sequence [Harkdown]
               | CodeBlock String
               | Header Int InlineContent
+              | Blockquote Harkdown
               deriving Show
 
 newline = char '\n'
@@ -33,6 +34,8 @@ minus = char '-'
 equals = char '='
 
 backslash = char '\\'
+
+gt = char '>'
 
 atMost1 :: Show a => Int -> Parser a -> Parser [a]
 atMost1 0 p = const [] <$> notFollowedBy p
@@ -110,4 +113,6 @@ setextHeader1 = Header 1 <$> setextHeaderBody <* many1 equals <* newline
 
 setextHeader2 = Header 2 <$> setextHeaderBody <* many1 minus <* newline
 
-parser = Sequence <$> many (codeBlock <|> horizontalRule <|> emptyAtxHeader <|> atxHeader <|> setextHeader <|> list <|> paragraph)
+blockquote = Blockquote <$> (gt *> space *> paragraph)
+
+parser = Sequence <$> many (codeBlock <|> blockquote <|> horizontalRule <|> emptyAtxHeader <|> atxHeader <|> setextHeader <|> list <|> paragraph)
