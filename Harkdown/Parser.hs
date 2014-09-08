@@ -21,6 +21,7 @@ data Harkdown = Paragraph [InlineContent]
               | CodeBlock String
               | Header Int InlineContent
               | Blockquote Harkdown
+              | EmptyHarkdown
               deriving Show
 
 newline = char '\n'
@@ -115,4 +116,6 @@ setextHeader2 = Header 2 <$> setextHeaderBody <* many1 minus <* newline
 
 blockquote = Blockquote <$> (gt *> space *> paragraph)
 
-parser = Sequence <$> many (codeBlock <|> blockquote <|> horizontalRule <|> emptyAtxHeader <|> atxHeader <|> setextHeader <|> list <|> paragraph)
+emptyLine = whitespace *> newline *> pure EmptyHarkdown
+
+parser = Sequence <$> many (codeBlock <|> blockquote <|> horizontalRule <|> emptyAtxHeader <|> atxHeader <|> setextHeader <|> list <|> paragraph <|> emptyLine)
