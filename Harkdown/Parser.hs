@@ -19,8 +19,7 @@ data Harkdown = Paragraph [InlineContent]
               | HorizontalLine
               | Sequence [Harkdown]
               | CodeBlock String
-              | Header String
-              | ATXHeader Int InlineContent
+              | Header Int InlineContent
               deriving Show
 
 newline = char '\n'
@@ -28,6 +27,10 @@ newline = char '\n'
 space = char ' '
 
 hash = char '#'
+
+minus = char '-'
+
+equals = char '='
 
 atMost1 :: Show a => Int -> Parser a -> Parser [a]
 atMost1 0 p = const [] <$> notFollowedBy p
@@ -58,8 +61,6 @@ listItem = notFollowedBy horizontalRule *> try (horizontalRuleListItem <|> regul
 
 list = List <$> many1 listItem
 
-setextHeader = Header <$> try (manyTill anyToken newline <* string "---\n")
-
 escapedChar = Text <$> (:[]) <$> (string "\\" *> anyToken)
 
 paragraphText = Text <$> (:[]) <$> noneOf "\n"
@@ -83,8 +84,14 @@ codeBlock = CodeBlock <$> (try (string "    ") *> many (noneOf "\n") <* string "
 
 atxHeaderLead = length <$> (atMost 3 space *> atMost 6 hash)
 
-emptyAtxHeader = ATXHeader <$> try (atxHeaderLead <* whitespace <* newline) <*> pure End
+emptyAtxHeader = Header <$> try (atxHeaderLead <* whitespace <* newline) <*> pure End
 
-atxHeader = ATXHeader <$> try (atxHeaderLead <* space) <*> (whitespace *> headerContent <* newline)
+atxHeader = Header <$> try (atxHeaderLead <* space) <*> (whitespace *> headerContent <* newline)
+
+setextHeader = (try setextHeader1 <|> try setextHeader2) <* optional newline
+
+setextHeader1 = Header 1 <$> headerContent <* newline <* many1 equals <* newline
+
+setextHeader2 = Header 2 <$> headerContent <* newline <* many1 minus <* newline
 
 parser = Sequence <$> many (codeBlock <|> horizontalRule <|> emptyAtxHeader <|> atxHeader <|> setextHeader <|> list <|> paragraph)
