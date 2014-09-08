@@ -27,9 +27,14 @@ newline = char '\n'
 
 space = char ' '
 
+atMost1 :: Show a => Int -> Parser a -> Parser [a]
+atMost1 0 p = const [] <$> notFollowedBy p
+atMost1 n p = (:) <$> p <*> (atMost1 0 p <|> atMost1 (n - 1) p)
+
 atMost :: Show a => Int -> Parser a -> Parser [a]
 atMost 0 p = const [] <$> notFollowedBy p
-atMost n p = (:) <$> p <*> (atMost 0 p <|> atMost (n - 1) p)
+atMost n p = (const [] <$> notFollowedBy p) <|>
+             (:) <$> p <*> (atMost 0 p <|> atMost (n - 1) p)
 
 whitespace = many space
 
@@ -65,6 +70,6 @@ paragraph = Paragraph <$> (many1 (notFollowedBy horizontalRule *> whitespace *> 
 
 codeBlock = CodeBlock <$> (try (string "    ") *> many (noneOf "\n") <* string "\n")
 
-atxHeader = ATXHeader <$> try (length <$> atMost 6 (char '#') <* space) <*> (whitespace *> inlineContent <* newline)
+atxHeader = ATXHeader <$> try (length <$> (atMost 3 space *> atMost1 6 (char '#') <* space)) <*> (whitespace *> inlineContent <* newline)
 
 parser = Sequence <$> many (codeBlock <|> horizontalRule <|> atxHeader <|> setextHeader <|> list <|> paragraph)
