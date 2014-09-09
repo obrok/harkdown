@@ -1,4 +1,4 @@
-module Harkdown.Tools ( split, flatten ) where
+module Harkdown.Tools ( strip, split, flatten ) where
 
 flatten :: [String] -> String
 flatten = foldl (++) ""
@@ -11,3 +11,5 @@ split c s = let helper _ [] = []
             in if not (null s) && (head (reverse s) == c)
                then helper c s ++ [[]]
                else helper c s
+
+strip = reverse . dropWhile (== ' ') . reverse . dropWhile (== ' ')

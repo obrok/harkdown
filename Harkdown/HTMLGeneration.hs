@@ -13,6 +13,7 @@ escapeHTML = replace "<" "&lt;" .
 
 paragraphHTML (Text text) = escapeHTML text
 paragraphHTML (Emphasis text) = "<em>" ++ text ++ "</em>"
+paragraphHTML (InlineCode code) = "<code>" ++ code ++ "</code>"
 
 inlineHTML (End) = ""
 inlineHTML (InlineContent c rest) = paragraphHTML c ++ inlineHTML rest

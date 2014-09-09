@@ -8,6 +8,7 @@ import Data.List
 
 data InlineItem = Text String
                 | Emphasis String
+                | InlineCode String
                 deriving Show
 
 data InlineContent = InlineContent InlineItem InlineContent
@@ -99,9 +100,12 @@ trailingBackslash = Text <$> (backslash *> lookAhead newline *> pure "\\")
 
 emphasis = Emphasis <$> between (string "*") (string "*") (many1 $ noneOf "*")
 
+inlineCode = InlineCode <$> strip <$> (try (string "```") *> manyTill anyToken (try $ string "```"))
+
 inlineContentItem = try trailingBackslash <|>
                     try escapedChar <|>
                     try emphasis <|>
+                    try inlineCode <|>
                     paragraphText
 
 inlineContent = (InlineContent <$>  inlineContentItem <*> (try inlineContent <|> pure End))
