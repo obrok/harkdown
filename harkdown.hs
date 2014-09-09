@@ -13,12 +13,6 @@ rjust width string = let count = width - length string `mod` width
 
 eachLine f = unlines . map f . lines
 
-split :: Char -> String -> [String]
-split _ [] = []
-split character string = let x = takeWhile (/= character) string
-                             xs = split character . drop 1 . dropWhile (/= character) $ string
-                         in x:xs
-
 expandTabs [] = []
 expandTabs line = let parts = split '\t' line
                       expanded = map (rjust tabStop) $ init parts

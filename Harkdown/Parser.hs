@@ -4,6 +4,7 @@ import Control.Applicative hiding ( many, (<|>), optional )
 import Control.Monad
 import Text.ParserCombinators.Parsec hiding ( space, newline )
 import Harkdown.Tools
+import Data.List
 
 data InlineItem = Text String
                 | Emphasis String
@@ -28,6 +29,14 @@ data Harkdown = Paragraph [InlineContent]
 isBlank = all (== ' ')
 
 dropBlanks = dropWhile isBlank . reverse . dropWhile isBlank . reverse
+
+dropIf _ _ [] = []
+dropIf 0 _ xs = xs
+dropIf n f (x:xs) = if f x
+                    then dropIf (n - 1) f xs
+                    else x:xs
+
+removeIndent n = foldl (++) "" . intersperse "\n" . map (dropIf n (== ' ')) . split '\n'
 
 newline = char '\n'
 
@@ -115,17 +124,18 @@ codeBlockLine = (try (string "    ") *> many (noneOf "\n") <* newline) <|>
 
 codeBlock = CodeBlock <$> unlines <$> dropBlanks <$> many1 codeBlockLine
 
-fencedBlockOpening = try (atLeast 3 backtick <* newline) <|>
-                     try (atLeast 3 tilde <* newline)
+fencedBlockOpening = (,) <$> (length <$> try smallIndent) <*> (
+                       try (atLeast 3 backtick <* newline) <|>
+                       try (atLeast 3 tilde <* newline))
 
 fencedBlockClosing opening = (string opening *> many (char $ head opening)) <|>
                              (eof *> pure "")
 
 fencedCodeBlock = do
-  opening <- fencedBlockOpening
+  (indent, opening) <- try fencedBlockOpening
   result <- manyTill anyToken (try $ fencedBlockClosing opening)
   optional newline
-  return $ CodeBlock result
+  return $ CodeBlock $ removeIndent indent result
 
 atxHeaderLead = length <$> (smallIndent *> atMost1 6 hash)
 
