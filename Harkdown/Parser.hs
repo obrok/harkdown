@@ -170,14 +170,11 @@ blockquote = Blockquote <$> (gt *> space *> paragraph)
 
 emptyLine = whitespace *> newline *> pure EmptyHarkdown
 
-htmlOpening = lt *> many1Till anyToken gt <* gt
-
-htmlClosing opening = lt *> foreslash *> string opening <* gt
-
-htmlBlock = do
-  opening <- try htmlOpening
-  rest <- manyTill anyToken (try $ htmlClosing opening)
-  return $ Raw $ "<" ++ opening ++ ">" ++ rest ++ "</" ++ opening ++ ">"
+htmlBlock = try $ do
+  indent <- smallIndent
+  lt <- lt
+  rest <- manyTill anyToken ((try $ string "\n\n") <|> (eof *> pure ""))
+  return $ Raw $ indent ++ (lt:rest)
 
 parser = Sequence <$> many (
   codeBlock <|>
@@ -187,7 +184,7 @@ parser = Sequence <$> many (
   emptyAtxHeader <|>
   atxHeader <|>
   setextHeader <|>
-  htmlBlock <|>
   list <|>
+  htmlBlock <|>
   paragraph <|>
   emptyLine)
