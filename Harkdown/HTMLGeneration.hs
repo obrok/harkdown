@@ -28,4 +28,5 @@ generateHTML (CodeBlock Nothing content) = "<pre><code>" ++ escapeHTML content +
 generateHTML (CodeBlock (Just lang) content) = "<pre><code class=\"language-" ++ lang ++ "\">" ++ escapeHTML content ++ "</code></pre>"
 generateHTML (Header n content) = "<h" ++ show n ++ ">" ++ inlineHTML content ++ "</h" ++ show n ++ ">"
 generateHTML (Blockquote content) = "<blockquote>\n" ++ generateHTML content ++ "\n</blockquote>"
+generateHTML (Raw text) = text
 generateHTML (EmptyHarkdown) = ""

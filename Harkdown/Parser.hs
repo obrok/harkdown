@@ -26,6 +26,7 @@ data Harkdown = Paragraph [InlineContent]
               | CodeBlock Language String
               | Header Int InlineContent
               | Blockquote Harkdown
+              | Raw String
               | EmptyHarkdown
               deriving Show
 
@@ -54,6 +55,10 @@ equals = char '='
 backslash = char '\\'
 
 gt = char '>'
+
+lt = char '<'
+
+foreslash = char '/'
 
 tilde = char '~'
 
@@ -165,6 +170,15 @@ blockquote = Blockquote <$> (gt *> space *> paragraph)
 
 emptyLine = whitespace *> newline *> pure EmptyHarkdown
 
+htmlOpening = lt *> many1Till anyToken gt <* gt
+
+htmlClosing opening = lt *> foreslash *> string opening <* gt
+
+htmlBlock = do
+  opening <- try htmlOpening
+  rest <- manyTill anyToken (try $ htmlClosing opening)
+  return $ Raw $ "<" ++ opening ++ ">" ++ rest ++ "</" ++ opening ++ ">"
+
 parser = Sequence <$> many (
   codeBlock <|>
   fencedCodeBlock <|>
@@ -173,6 +187,7 @@ parser = Sequence <$> many (
   emptyAtxHeader <|>
   atxHeader <|>
   setextHeader <|>
+  htmlBlock <|>
   list <|>
   paragraph <|>
   emptyLine)
