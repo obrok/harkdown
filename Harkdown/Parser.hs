@@ -15,13 +15,15 @@ data InlineContent = InlineContent InlineItem InlineContent
                    | End
                    deriving Show
 
+type Language = Maybe String
+
 data Harkdown = Paragraph [InlineContent]
               | ListItem String
               | HorizontalLineListItem
               | List [Harkdown]
               | HorizontalLine
               | Sequence [Harkdown]
-              | CodeBlock String
+              | CodeBlock Language String
               | Header Int InlineContent
               | Blockquote Harkdown
               | EmptyHarkdown
@@ -127,20 +129,21 @@ paragraph = Paragraph <$> (many1 paragraphItem <* optional newline)
 codeBlockLine = (try (string "    ") *> many (noneOf "\n") <* newline) <|>
                 try (whitespace *> newline *> lookAhead codeBlockLine *> pure "")
 
-codeBlock = CodeBlock <$> unlines <$> dropBlanks <$> many1 codeBlockLine
+codeBlock = CodeBlock Nothing <$> unlines <$> dropBlanks <$> many1 codeBlockLine
 
-fencedBlockOpening = (,) <$> (length <$> try smallIndent) <*> (
-                       try (atLeast 3 backtick <* newline) <|>
-                       try (atLeast 3 tilde <* newline))
+fencedBlockOpening = (,,) <$>
+  (length <$> try smallIndent) <*>
+  (try (atLeast 3 backtick) <|> try (atLeast 3 tilde)) <*>
+  (optional whitespace *> optionMaybe (many1 letter) <* manyTill (noneOf "~`\n") newline)
 
 fencedBlockClosing opening = (string opening *> many (char $ head opening)) <|>
                              (eof *> pure "")
 
 fencedCodeBlock = do
-  (indent, opening) <- try fencedBlockOpening
+  (indent, opening, lang) <- try fencedBlockOpening
   result <- manyTill anyToken (try $ fencedBlockClosing opening)
   optional newline
-  return $ CodeBlock $ removeIndent indent result
+  return $ CodeBlock lang $ removeIndent indent result
 
 atxHeaderLead = length <$> (smallIndent *> atMost1 6 hash)
 
