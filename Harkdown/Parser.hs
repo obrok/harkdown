@@ -72,6 +72,8 @@ atLeast :: Show a => Int -> Parser a -> Parser [a]
 atLeast 0 p = many p
 atLeast n p = (:) <$> try p <*> atLeast (n - 1) p
 
+many1Till p end = many1 (notFollowedBy end *> p)
+
 smallIndent = atMost 3 space
 
 whitespace = many space
@@ -134,7 +136,7 @@ codeBlock = CodeBlock Nothing <$> unlines <$> dropBlanks <$> many1 codeBlockLine
 fencedBlockOpening = (,,) <$>
   (length <$> try smallIndent) <*>
   (try (atLeast 3 backtick) <|> try (atLeast 3 tilde)) <*>
-  (optional whitespace *> optionMaybe (many1 letter) <* manyTill (noneOf "~`\n") newline)
+  try (optional whitespace *> optionMaybe (many1Till (noneOf "~`\n") space) <* manyTill (noneOf "~`\n") newline)
 
 fencedBlockClosing opening = (string opening *> many (char $ head opening)) <|>
                              (eof *> pure "")
