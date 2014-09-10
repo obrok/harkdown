@@ -138,7 +138,7 @@ fencedBlockOpening = (,,) <$>
   (try (atLeast 3 backtick) <|> try (atLeast 3 tilde)) <*>
   try (optional whitespace *> optionMaybe (many1Till (noneOf "~`\n") space) <* manyTill (noneOf "~`\n") newline)
 
-fencedBlockClosing opening = (string opening *> many (char $ head opening)) <|>
+fencedBlockClosing opening = (string opening *> many (char $ head opening) <* notFollowedBy (many1 (noneOf "\n") *> newline)) <|>
                              (eof *> pure "")
 
 fencedCodeBlock = do
