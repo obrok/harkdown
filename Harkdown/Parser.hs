@@ -127,6 +127,7 @@ headerContent = (InlineContent <$> inlineContentItem <*> (try headerContentRest 
 paragraphItem = notFollowedBy horizontalRule *>
                 notFollowedBy atxHeader *>
                 notFollowedBy fencedBlockOpening *>
+                notFollowedBy htmlBlock *>
                 whitespace *>
                 inlineContent <*
                 newline
