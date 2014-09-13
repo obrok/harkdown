@@ -193,9 +193,12 @@ htmlBlock = try $ do
   rest <- manyTill anyToken ((try $ string "\n\n") <|> (eof *> pure ""))
   return $ Raw $ indent ++ (lt:rest)
 
-linkLabel = smallIndent *> lbracket *> many (try (backslash *> anyToken) <|> noneOf "]") <* rbracket <* colon <* whitespace <* optional newline
+linkLabel = smallIndent *> lbracket *> many (backslash *> anyToken <|> noneOf "]") <* rbracket <* colon <* whitespace <* optional newline
 
-linkHref = whitespace *> many (noneOf " ") <* whitespace <* optional newline
+linkHrefBody = try (lt *> many (backslash *> anyToken <|> noneOf ">") <* gt) <|>
+               many (noneOf " ")
+
+linkHref = whitespace *> linkHrefBody <* whitespace <* optional newline
 
 linkTitle = whitespace *> oneOf "'\"" *> many (noneOf "'\"") <* oneOf "'\"" <* whitespace <* newline
 
