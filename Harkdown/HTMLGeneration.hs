@@ -3,7 +3,9 @@ module Harkdown.HTMLGeneration ( generateHTML ) where
 import Harkdown.Parser
 import Harkdown.Tools
 import Data.List
+import qualified Data.Map as M
 import Data.List.Utils
+import Control.Monad.Trans.State.Lazy
 
 joinLines = init . unlines
 
@@ -11,22 +13,53 @@ escapeHTML = replace "<" "&lt;" .
              replace ">" "&gt;" .
              replace "\"" "&quot;"
 
-paragraphHTML (Text text) = escapeHTML text
-paragraphHTML (Emphasis text) = "<em>" ++ text ++ "</em>"
-paragraphHTML (InlineCode code) = "<code>" ++ code ++ "</code>"
+paragraphHTML :: InlineItem -> State (M.Map String Harkdown) String
 
-inlineHTML (End) = ""
-inlineHTML (InlineContent c rest) = paragraphHTML c ++ inlineHTML rest
+paragraphHTML (Text text) = return $ escapeHTML text
+paragraphHTML (Emphasis text) = return $ "<em>" ++ text ++ "</em>"
+paragraphHTML (InlineCode code) = return $ "<code>" ++ code ++ "</code>"
 
-generateHTML (Paragraph ps) = "<p>" ++ (joinLines . map inlineHTML $ ps) ++ "</p>"
-generateHTML (List items) = "<ul>\n" ++ (unlines . map generateHTML $ items) ++ "</ul>"
-generateHTML (ListItem content) = "<li>" ++ content ++ "</li>"
-generateHTML (HorizontalLineListItem) = "<li><hr/></li>"
-generateHTML (HorizontalLine) = "<hr/>"
-generateHTML (Sequence items) = flatten . intersperse "\n" . map generateHTML $ items
-generateHTML (CodeBlock Nothing content) = "<pre><code>" ++ escapeHTML content ++ "</code></pre>"
-generateHTML (CodeBlock (Just lang) content) = "<pre><code class=\"language-" ++ lang ++ "\">" ++ escapeHTML content ++ "</code></pre>"
-generateHTML (Header n content) = "<h" ++ show n ++ ">" ++ inlineHTML content ++ "</h" ++ show n ++ ">"
-generateHTML (Blockquote content) = "<blockquote>\n" ++ generateHTML content ++ "\n</blockquote>"
-generateHTML (Raw text) = text
-generateHTML (EmptyHarkdown) = ""
+paragraphHTML (LinkReference label) = do
+  all <- get
+  definition <- gets $ M.lookup label
+  case definition of
+    Just (LinkReferenceDefinition _ href title) -> return $ "<a href=\"" ++  href ++ "\" title=\"" ++ title ++ "\">" ++ label ++ "</a>"
+    Nothing -> return $ "[undefined]"
+
+inlineHTML :: InlineContent -> State (M.Map String Harkdown) String
+
+inlineHTML (End) = return ""
+inlineHTML (InlineContent c rest) = do
+  restHTML <- inlineHTML rest
+  cHTML <- paragraphHTML c
+  return $ cHTML ++ restHTML
+
+generateHTMLWithLabels :: Harkdown -> State (M.Map String Harkdown) String
+
+generateHTMLWithLabels (List items) = return $ "<ul>\n" ++ (unlines . map generateHTML $ items) ++ "</ul>"
+generateHTMLWithLabels (ListItem content) = return $ "<li>" ++ content ++ "</li>"
+generateHTMLWithLabels (HorizontalLineListItem) = return $ "<li><hr/></li>"
+generateHTMLWithLabels (HorizontalLine) = return $ "<hr/>"
+generateHTMLWithLabels (CodeBlock Nothing content) = return $ "<pre><code>" ++ escapeHTML content ++ "</code></pre>"
+generateHTMLWithLabels (CodeBlock (Just lang) content) = return $ "<pre><code class=\"language-" ++ lang ++ "\">" ++ escapeHTML content ++ "</code></pre>"
+generateHTMLWithLabels (Blockquote content) = return $ "<blockquote>\n" ++ generateHTML content ++ "\n</blockquote>"
+generateHTMLWithLabels (Raw text) = return $ text
+generateHTMLWithLabels (EmptyHarkdown) = return $ ""
+
+generateHTMLWithLabels (Sequence items) = do
+  content <- mapM generateHTMLWithLabels items
+  return $ flatten . intersperse "\n" $ content
+
+generateHTMLWithLabels (Header n c) = do
+  content <- inlineHTML c
+  return $ "<h" ++ show n ++ ">" ++ content ++ "</h" ++ show n ++ ">"
+
+generateHTMLWithLabels (Paragraph ps) = do
+  content <- mapM inlineHTML ps
+  return $ "<p>" ++ (joinLines content) ++ "</p>"
+
+generateHTMLWithLabels def@(LinkReferenceDefinition name _ _) = do
+  modify $ M.insert name def
+  return $ ""
+
+generateHTML harkdown = evalState (generateHTMLWithLabels harkdown) M.empty

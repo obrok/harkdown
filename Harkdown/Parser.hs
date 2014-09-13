@@ -6,16 +6,20 @@ import Text.ParserCombinators.Parsec hiding ( space, newline )
 import Harkdown.Tools
 import Data.List
 
+type Language = Maybe String
+type Href = String
+type Title = String
+type LinkLabel = String
+
 data InlineItem = Text String
                 | Emphasis String
                 | InlineCode String
+                | LinkReference LinkLabel
                 deriving Show
 
 data InlineContent = InlineContent InlineItem InlineContent
                    | End
                    deriving Show
-
-type Language = Maybe String
 
 data Harkdown = Paragraph [InlineContent]
               | ListItem String
@@ -27,6 +31,7 @@ data Harkdown = Paragraph [InlineContent]
               | Header Int InlineContent
               | Blockquote Harkdown
               | Raw String
+              | LinkReferenceDefinition LinkLabel Href Title
               | EmptyHarkdown
               deriving Show
 
@@ -63,6 +68,14 @@ foreslash = char '/'
 tilde = char '~'
 
 backtick = char '`'
+
+lbracket = char '['
+
+rbracket = char ']'
+
+colon = char ':'
+
+doubleQuote = char '"'
 
 atMost1 :: Show a => Int -> Parser a -> Parser [a]
 atMost1 0 p = const [] <$> notFollowedBy p
@@ -111,10 +124,13 @@ emphasis = Emphasis <$> between (string "*") (string "*") (many1 $ noneOf "*")
 
 inlineCode = InlineCode <$> strip <$> (try (string "```") *> manyTill anyToken (try $ string "```"))
 
+linkReference = LinkReference <$> (lbracket *> many (noneOf "]") <* rbracket)
+
 inlineContentItem = try trailingBackslash <|>
                     try escapedChar <|>
                     try emphasis <|>
                     try inlineCode <|>
+                    try linkReference <|>
                     paragraphText
 
 inlineContent = (InlineContent <$>  inlineContentItem <*> (try inlineContent <|> pure End))
@@ -177,6 +193,14 @@ htmlBlock = try $ do
   rest <- manyTill anyToken ((try $ string "\n\n") <|> (eof *> pure ""))
   return $ Raw $ indent ++ (lt:rest)
 
+linkLabel = lbracket *> many (noneOf "]") <* rbracket <* colon
+
+linkHref = whitespace *> many (noneOf " ") <* whitespace
+
+linkTitle = doubleQuote *> many (noneOf "\"") <* doubleQuote <* newline
+
+linkReferenceDefinition = LinkReferenceDefinition <$> linkLabel <*> linkHref <*> linkTitle
+
 parser = Sequence <$> many (
   codeBlock <|>
   fencedCodeBlock <|>
@@ -187,5 +211,6 @@ parser = Sequence <$> many (
   setextHeader <|>
   list <|>
   htmlBlock <|>
+  try linkReferenceDefinition <|>
   paragraph <|>
   emptyLine)
