@@ -3,6 +3,7 @@ module Harkdown.HTMLGeneration ( generateHTML ) where
 import Harkdown.Parser
 import Harkdown.Tools
 import Data.List
+import Data.Char
 import qualified Data.Map as M
 import Data.List.Utils
 import Control.Monad.Trans.State.Lazy
@@ -20,7 +21,7 @@ paragraphHTML (Emphasis text) = return $ "<em>" ++ text ++ "</em>"
 paragraphHTML (InlineCode code) = return $ "<code>" ++ code ++ "</code>"
 
 paragraphHTML (LinkReference label) = do
-  definition <- gets $ M.lookup label
+  definition <- gets $ M.lookup (map toLower label)
   case definition of
     Just (LinkReferenceDefinition _ href (Just title)) -> return $ "<a href=\"" ++  href ++ "\" title=\"" ++ title ++ "\">" ++ label ++ "</a>"
     Just (LinkReferenceDefinition _ href Nothing) -> return $ "<a href=\"" ++  href ++ "\">" ++ label ++ "</a>"
@@ -62,7 +63,7 @@ generateHTMLWithLabels def@(LinkReferenceDefinition name _ _) = do
   return $ ""
 
 findLabelDefinitions (Sequence items) = foldl M.union M.empty $ map findLabelDefinitions items
-findLabelDefinitions def@(LinkReferenceDefinition name _ _) = M.singleton name def
+findLabelDefinitions def@(LinkReferenceDefinition name _ _) = M.singleton (map toLower name) def
 findLabelDefinitions _ = M.empty
 
 generateHTML harkdown = evalState (generateHTMLWithLabels harkdown) (findLabelDefinitions harkdown)
