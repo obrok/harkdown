@@ -22,7 +22,8 @@ paragraphHTML (InlineCode code) = return $ "<code>" ++ code ++ "</code>"
 paragraphHTML (LinkReference label) = do
   definition <- gets $ M.lookup label
   case definition of
-    Just (LinkReferenceDefinition _ href title) -> return $ "<a href=\"" ++  href ++ "\" title=\"" ++ title ++ "\">" ++ label ++ "</a>"
+    Just (LinkReferenceDefinition _ href (Just title)) -> return $ "<a href=\"" ++  href ++ "\" title=\"" ++ title ++ "\">" ++ label ++ "</a>"
+    Just (LinkReferenceDefinition _ href Nothing) -> return $ "<a href=\"" ++  href ++ "\">" ++ label ++ "</a>"
     Nothing -> return $ "[undefined]"
 
 inlineHTML :: InlineContent -> State (M.Map String Harkdown) String

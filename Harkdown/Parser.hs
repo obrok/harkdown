@@ -8,7 +8,7 @@ import Data.List
 
 type Language = Maybe String
 type Href = String
-type Title = String
+type Title = Maybe String
 type LinkLabel = String
 
 data InlineItem = Text String
@@ -195,14 +195,14 @@ htmlBlock = try $ do
 
 linkLabel = smallIndent *> lbracket *> many (backslash *> anyToken <|> noneOf "]") <* rbracket <* colon <* whitespace <* optional newline
 
-linkHrefBody = try (lt *> many (backslash *> anyToken <|> noneOf ">") <* gt) <|>
-               many (noneOf " ")
+linkHrefBody = try (lt *> many (backslash *> anyToken <|> noneOf "\n>") <* gt) <|>
+               many (noneOf "\n ")
 
 linkHref = whitespace *> linkHrefBody <* whitespace <* optional newline
 
 linkTitle = whitespace *> oneOf "'\"" *> many (noneOf "'\"") <* oneOf "'\"" <* whitespace <* newline
 
-linkReferenceDefinition = LinkReferenceDefinition <$> linkLabel <*> linkHref <*> linkTitle
+linkReferenceDefinition = LinkReferenceDefinition <$> linkLabel <*> linkHref <*> optionMaybe linkTitle
 
 parser = Sequence <$> many (
   codeBlock <|>
