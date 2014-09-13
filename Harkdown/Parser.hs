@@ -193,11 +193,11 @@ htmlBlock = try $ do
   rest <- manyTill anyToken ((try $ string "\n\n") <|> (eof *> pure ""))
   return $ Raw $ indent ++ (lt:rest)
 
-linkLabel = lbracket *> many (noneOf "]") <* rbracket <* colon
+linkLabel = smallIndent *> lbracket *> many (noneOf "]") <* rbracket <* colon <* whitespace <* optional newline
 
-linkHref = whitespace *> many (noneOf " ") <* whitespace
+linkHref = whitespace *> many (noneOf " ") <* whitespace <* optional newline
 
-linkTitle = doubleQuote *> many (noneOf "\"") <* doubleQuote <* newline
+linkTitle = whitespace *> oneOf "'\"" *> many (noneOf "'\"") <* oneOf "'\"" <* whitespace <* newline
 
 linkReferenceDefinition = LinkReferenceDefinition <$> linkLabel <*> linkHref <*> linkTitle
 
