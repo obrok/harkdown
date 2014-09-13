@@ -196,7 +196,7 @@ htmlBlock = try $ do
 linkLabel = smallIndent *> lbracket *> many (backslash *> anyToken <|> noneOf "]") <* rbracket <* colon <* whitespace <* optional newline
 
 linkHrefBody = try (lt *> many (backslash *> anyToken <|> noneOf "\n>") <* gt) <|>
-               many (noneOf "\n ")
+               many1 (noneOf "\n ")
 
 linkHref = whitespace *> linkHrefBody <* whitespace <* optional newline
 

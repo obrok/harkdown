@@ -24,7 +24,7 @@ paragraphHTML (LinkReference label) = do
   case definition of
     Just (LinkReferenceDefinition _ href (Just title)) -> return $ "<a href=\"" ++  href ++ "\" title=\"" ++ title ++ "\">" ++ label ++ "</a>"
     Just (LinkReferenceDefinition _ href Nothing) -> return $ "<a href=\"" ++  href ++ "\">" ++ label ++ "</a>"
-    Nothing -> return $ "[undefined]"
+    Nothing -> return $ "[" ++ label ++ "]"
 
 inlineHTML :: InlineContent -> State (M.Map String Harkdown) String
 
