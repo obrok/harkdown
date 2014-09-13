@@ -124,7 +124,7 @@ emphasis = Emphasis <$> between (string "*") (string "*") (many1 $ noneOf "*")
 
 inlineCode = InlineCode <$> strip <$> (try (string "```") *> manyTill anyToken (try $ string "```"))
 
-linkReference = LinkReference <$> (lbracket *> many (noneOf "]") <* rbracket)
+linkReference = LinkReference <$> (lbracket *> many (backslash *> anyToken <|> noneOf "]") <* rbracket)
 
 inlineContentItem = try trailingBackslash <|>
                     try escapedChar <|>
@@ -193,7 +193,7 @@ htmlBlock = try $ do
   rest <- manyTill anyToken ((try $ string "\n\n") <|> (eof *> pure ""))
   return $ Raw $ indent ++ (lt:rest)
 
-linkLabel = smallIndent *> lbracket *> many (noneOf "]") <* rbracket <* colon <* whitespace <* optional newline
+linkLabel = smallIndent *> lbracket *> many (try (backslash *> anyToken) <|> noneOf "]") <* rbracket <* colon <* whitespace <* optional newline
 
 linkHref = whitespace *> many (noneOf " ") <* whitespace <* optional newline
 

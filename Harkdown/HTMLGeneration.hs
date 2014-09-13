@@ -20,7 +20,6 @@ paragraphHTML (Emphasis text) = return $ "<em>" ++ text ++ "</em>"
 paragraphHTML (InlineCode code) = return $ "<code>" ++ code ++ "</code>"
 
 paragraphHTML (LinkReference label) = do
-  all <- get
   definition <- gets $ M.lookup label
   case definition of
     Just (LinkReferenceDefinition _ href title) -> return $ "<a href=\"" ++  href ++ "\" title=\"" ++ title ++ "\">" ++ label ++ "</a>"
