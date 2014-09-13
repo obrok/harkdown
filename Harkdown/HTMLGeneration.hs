@@ -59,7 +59,10 @@ generateHTMLWithLabels (Paragraph ps) = do
   return $ "<p>" ++ (joinLines content) ++ "</p>"
 
 generateHTMLWithLabels def@(LinkReferenceDefinition name _ _) = do
-  modify $ M.insert name def
   return $ ""
 
-generateHTML harkdown = evalState (generateHTMLWithLabels harkdown) M.empty
+findLabelDefinitions (Sequence items) = foldl M.union M.empty $ map findLabelDefinitions items
+findLabelDefinitions def@(LinkReferenceDefinition name _ _) = M.singleton name def
+findLabelDefinitions _ = M.empty
+
+generateHTML harkdown = evalState (generateHTMLWithLabels harkdown) (findLabelDefinitions harkdown)
